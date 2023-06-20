@@ -110,21 +110,20 @@ if (userArr.length > 0) {
 
 formUser.addEventListener("submit", (event) => {
   event.preventDefault();
+  const records = [];
+
   const user = {
     name: inputName.value,
     email: inputEmail.value,
     genre: getGenre(),
-    artist1: artist1.value,
-    record1: record1.value,
-    artist2: artist2.value,
-    record2: record2.value,
-    artist3: artist3.value,
-    record3: record3.value,
-    artist4: artist4.value,
-    record4: record4.value,
-    artist5: artist5.value,
-    record5: record5.value,
+    records: records,
   };
+
+  addRecord(records, artist1.value, record1.value);
+  addRecord(records, artist2.value, record2.value);
+  addRecord(records, artist3.value, record3.value);
+  addRecord(records, artist4.value, record4.value);
+  addRecord(records, artist5.value, record5.value);
   
   createUser(user);
   const Toast = Swal.mixin({
@@ -145,6 +144,12 @@ formUser.addEventListener("submit", (event) => {
   })
 });
 
+//función para agregar un nuevo dato al array records
+function addRecord(records, artist, record) {
+  if (artist && record) {
+    records.push({ artist: artist, record: record });
+  }
+}
 
 //Función para para conseguir el genre del listado
 function getGenre () {
@@ -240,36 +245,23 @@ function chatStripe (isAi, value, uniqueId) {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  //Funcion para generar el prompt
-  const favoriteRecords = {
-    artist1: userArr.find(item => item.hasOwnProperty('artist1')).artist1,
-    artist2: userArr.find(item => item.hasOwnProperty('artist2')).artist2,
-    artist3: userArr.find(item => item.hasOwnProperty('artist3')).artist3,
-    artist4: userArr.find(item => item.hasOwnProperty('artist4')).artist4,
-    artist5: userArr.find(item => item.hasOwnProperty('artist5')).artist5,
-
-    record1: userArr.find(item => item.hasOwnProperty('record1')).record1,
-    record2: userArr.find(item => item.hasOwnProperty('record2')).record2,
-    record3: userArr.find(item => item.hasOwnProperty('record3')).record3,
-    record4: userArr.find(item => item.hasOwnProperty('record4')).record4,
-    record5: userArr.find(item => item.hasOwnProperty('record5')).record5
+  // Función para generar el prompt a partir de los registros
+  const generatePrompt = (records, genre) => {
+    let prompt = 'These are my favorite records:\n';
+    records.forEach((record, index) => {
+      const { artist, record: album } = record;
+      prompt += `${artist} - ${album}\n`;
+    });
+    prompt += `This is my favorite genre: ${genre}\n\nRecommend one record to listen to, based on my favorite records\nOnly answer with the name of the artist and record.\nNO EXTRA TEXT.`;
+    return prompt;
   };
-  const favoriteGenre = userArr.find(item => item.genre)?.genre;
-  
-  // Genera el prompt
-  const prompt = `
-  These are my 5 favorite records:
-  ${favoriteRecords.artist1} - ${favoriteRecords.record1}
-  ${favoriteRecords.artist2} - ${favoriteRecords.record2}
-  ${favoriteRecords.artist3} - ${favoriteRecords.record3}
-  ${favoriteRecords.artist4} - ${favoriteRecords.record4}
-  ${favoriteRecords.artist5} - ${favoriteRecords.record5}
-  This is my favorite genre: ${favoriteGenre}
 
-  Recommend one record to listen to, based on my favorite records
-  Only answer with the name of the artist and record.
-  NO EXTRA TEXT.
-  `;  
+  // Obtener los registros y el género favorito
+  const records = userArr[0].records;
+  const favoriteGenre = userArr[0].genre;
+
+  // Generar el prompt
+  const prompt = generatePrompt(records, favoriteGenre);
 
   const data = new FormData(formIa);
 
@@ -299,8 +291,7 @@ const handleSubmit = async (e) => {
       prompt: prompt
     })
   })
-  console.log(prompt);
-console.log(response);
+  
   clearInterval(loadInterval);
   messageDiv.innerHTML = '';
 
@@ -330,7 +321,23 @@ formIa.addEventListener('keyup', (e) => {//ejecuta el submit con un enter
 const handleLike = async (e) => {
   e.preventDefault();
 
-  const prompt = `I loved that record! Recommend me another record based on my 5 favorite records!`;  
+  // Función para generar el prompt a partir de los registros
+  const generatePrompt = (records, genre) => {
+    let prompt = 'These are my favorite records:\n';
+    records.forEach((record, index) => {
+      const { artist, record: album } = record;
+      prompt += `${artist} - ${album}\n`;
+    });
+    prompt += `This is my favorite genre: ${genre}\n\nI liked the previous record you recommended me. Recommend one record to listen to, based on my favorite records\nOnly answer with the name of the artist and record.\nNO EXTRA TEXT.`;
+    return prompt;
+  };
+
+  // Obtener los registros y el género favorito
+  const records = userArr[0].records;
+  const favoriteGenre = userArr[0].genre;
+
+  // Generar el prompt
+  const prompt = generatePrompt(records, favoriteGenre);
   const data = new FormData(formIa);
 
   //ingreso de data del usuario
@@ -384,7 +391,23 @@ like.addEventListener('click', handleLike);
 const handleDislike = async (e) => {
   e.preventDefault();
 
-  const prompt = `I didn't liked that record! Recommend me another record yo haven't recommend me yet.`;  
+  // Función para generar el prompt a partir de los registros
+  const generatePrompt = (records, genre) => {
+    let prompt = 'These are my favorite records:\n';
+    records.forEach((record, index) => {
+      const { artist, record: album } = record;
+      prompt += `${artist} - ${album}\n`;
+    });
+    prompt += `This is my favorite genre: ${genre}\n\nI did not liked the previous record you recommended me. Recommend one record to listen to, based on my favorite records\nOnly answer with the name of the artist and record.\nNO EXTRA TEXT.`;
+    return prompt;
+  };
+
+  // Obtener los registros y el género favorito
+  const records = userArr[0].records;
+  const favoriteGenre = userArr[0].genre;
+
+  // Generar el prompt
+  const prompt = generatePrompt(records, favoriteGenre);
   const data = new FormData(formIa);
 
   //ingreso del usuario
@@ -438,7 +461,7 @@ dislike.addEventListener('click', handleDislike);
 const handleSurpriseMe = async (e) => {
   e.preventDefault();
   const favoriteGenre = userArr.find(item => item.genre)?.genre;
-  const prompt = `My favorite genre is ${favoriteGenre}. Recommend me one record to listen to based on my favorite genre`;
+  const prompt = `My favorite genre is ${favoriteGenre}. Recommend me one record to listen to based on my favorite genre. \nOnly answer with the name of the artist and record.\nNO EXTRA TEXT.`;
   const data = new FormData(formIa);
 
   //ingreso de data del usuario
@@ -498,20 +521,24 @@ recommendedRecordSection.classList.add('disable')
   //Muestra nuestra lista de favoritos. Artist & Records
   favoritesList.addEventListener('click', () => {
     const storedUserArr = JSON.parse(localStorage.getItem('userArr'));
+
+    const user = storedUserArr[0];
+    const records = user.records;
+
     actions.classList.add('disable');
     favorites.classList.remove('disable');
     
-    favoriteArtist1.textContent = `${storedUserArr[0].artist1}`
-    favoriteArtist2.textContent = `${storedUserArr[0].artist2}`
-    favoriteArtist3.textContent = `${storedUserArr[0].artist3}`
-    favoriteArtist4.textContent = `${storedUserArr[0].artist4}`
-    favoriteArtist5.textContent = `${storedUserArr[0].artist5}`
+    favoriteArtist1.textContent = `${records[0].artist}`
+    favoriteArtist2.textContent = `${records[1].artist}`
+    favoriteArtist3.textContent = `${records[2].artist}`
+    favoriteArtist4.textContent = `${records[3].artist}`
+    favoriteArtist5.textContent = `${records[4].artist}`
     
-    favoriteRecord1.textContent = `${storedUserArr[0].record1}`
-    favoriteRecord2.textContent = `${storedUserArr[0].record2}`
-    favoriteRecord3.textContent = `${storedUserArr[0].record3}`
-    favoriteRecord4.textContent = `${storedUserArr[0].record4}`
-    favoriteRecord5.textContent = `${storedUserArr[0].record5}`
+    favoriteRecord1.textContent = `${records[0].record}`
+    favoriteRecord2.textContent = `${records[1].record}`
+    favoriteRecord3.textContent = `${records[2].record}`
+    favoriteRecord4.textContent = `${records[3].record}`
+    favoriteRecord5.textContent = `${records[4].record}`
     
     goBackBtn.addEventListener('click', (event) => {
       event.preventDefault();
@@ -525,19 +552,23 @@ recommendedRecordSection.classList.add('disable')
   //Muestra los artistas y discos favoritos y permite modificarlos. 
 changeArtists.addEventListener('click', () => {
   const storedUserArr = JSON.parse(localStorage.getItem('userArr'));
+
+  const user = storedUserArr[0];
+  const records = user.records;
+
   actions.classList.add('disable');
   newArtists.classList.remove('disable');
-  showFavoriteArtist1.textContent = `${storedUserArr[0].artist1}`
-  showFavoriteArtist2.textContent = `${storedUserArr[0].artist2}`
-  showFavoriteArtist3.textContent = `${storedUserArr[0].artist3}`
-  showFavoriteArtist4.textContent = `${storedUserArr[0].artist4}`
-  showFavoriteArtist5.textContent = `${storedUserArr[0].artist5}`
+  showFavoriteArtist1.textContent = `${records[0].artist}`
+  showFavoriteArtist2.textContent = `${records[1].artist}`
+  showFavoriteArtist3.textContent = `${records[2].artist}`
+  showFavoriteArtist4.textContent = `${records[3].artist}`
+  showFavoriteArtist5.textContent = `${records[4].artist}`
   
-  showFavoriteRecord1.textContent = `${storedUserArr[0].record1}`
-  showFavoriteRecord2.textContent = `${storedUserArr[0].record2}`
-  showFavoriteRecord3.textContent = `${storedUserArr[0].record3}`
-  showFavoriteRecord4.textContent = `${storedUserArr[0].record4}`
-  showFavoriteRecord5.textContent = `${storedUserArr[0].record5}`
+  showFavoriteRecord1.textContent = `${records[0].record}`
+  showFavoriteRecord2.textContent = `${records[1].record}`
+  showFavoriteRecord3.textContent = `${records[2].record}`
+  showFavoriteRecord4.textContent = `${records[3].record}`
+  showFavoriteRecord5.textContent = `${records[4].record}`
 
   inputNewArtist1.value = '';
   inputNewRecord1.value = '';
@@ -571,8 +602,8 @@ function replace1(){
     const newRecord1 = inputNewRecord1.value;
     let storedUserArr = JSON.parse(localStorage.getItem('userArr'));
     if (Array.isArray(storedUserArr) && storedUserArr.length > 0) {
-      storedUserArr[0].artist1 = newArtist1;
-      storedUserArr[0].record1 = newRecord1;
+      storedUserArr[0].records[0].artist = newArtist1;
+      storedUserArr[0].records[0].record = newRecord1;
       localStorage.setItem('userArr', JSON.stringify(storedUserArr));
       showFavoriteArtist1.textContent = newArtist1;
       showFavoriteRecord1.textContent = newRecord1;      
@@ -585,8 +616,8 @@ function replace2(){
     const newArtist2 = inputNewArtist2.value;
     const newRecord2 = inputNewRecord2.value;
     const storedUserArr = JSON.parse(localStorage.getItem('userArr'));
-    storedUserArr[0].artist2 = newArtist2;
-    storedUserArr[0].record2 = newRecord2;
+    storedUserArr[0].records[1].artist = newArtist2;
+    storedUserArr[0].records[1].record = newRecord2;
     localStorage.setItem('userArr', JSON.stringify(storedUserArr));
     showFavoriteArtist2.textContent = `${newArtist2}`;
     showFavoriteRecord2.textContent = `${newRecord2}`;
@@ -599,8 +630,8 @@ function replace3(){
     const newArtist3 = inputNewArtist3.value;
     const newRecord3 = inputNewRecord3.value;
     const storedUserArr = JSON.parse(localStorage.getItem('userArr'));
-    storedUserArr[0].artist3 = newArtist3;
-    storedUserArr[0].record3 = newRecord3;
+    storedUserArr[0].records[2].artist = newArtist3;
+    storedUserArr[0].records[2].record = newRecord3;
     localStorage.setItem('userArr', JSON.stringify(storedUserArr));
     showFavoriteArtist3.textContent = `${newArtist3}`;
     showFavoriteRecord3.textContent = `${newRecord3}`;
@@ -612,8 +643,8 @@ function replace4(){
     const newArtist4 = inputNewArtist4.value;
     const newRecord4 = inputNewRecord4.value;
     const storedUserArr = JSON.parse(localStorage.getItem('userArr'));
-    storedUserArr[0].artist4 = newArtist4;
-    storedUserArr[0].record4 = newRecord4;
+    storedUserArr[0].records[3].artist = newArtist4;
+    storedUserArr[0].records[3].record = newRecord4;
     localStorage.setItem('userArr', JSON.stringify(storedUserArr));
     showFavoriteArtist4.textContent = `${newArtist4}`;
     showFavoriteRecord4.textContent = `${newRecord4}`;
@@ -626,8 +657,8 @@ function replace5(){
     const newArtist5 = inputNewArtist5.value;
     const newRecord5 = inputNewRecord5.value;
     const storedUserArr = JSON.parse(localStorage.getItem('userArr'));
-    storedUserArr[0].artist5 = newArtist5;
-    storedUserArr[0].record5 = newRecord5;
+    storedUserArr[0].records[4].artist = newArtist5;
+    storedUserArr[0].records[4].record = newRecord5;
     localStorage.setItem('userArr', JSON.stringify(storedUserArr));
     showFavoriteArtist5.textContent = `${newArtist5}`;
     showFavoriteRecord5.textContent = `${newRecord5}`;
